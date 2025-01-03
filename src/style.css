@@ -26,3 +26,48 @@
   background-color: #e40000;
   color: #fff;
 }
+
+.createRoom{
+  margin: 20px;
+  padding: 15px;
+  border: 1px black solid;
+  display: flex;
+  width: -webkit-fill-available;
+  justify-content: center;
+}
+.joinRoom{
+  margin: 20px;
+  padding: 15px;
+  border: 1px black solid;
+  display: flex;
+  width: -webkit-fill-available;
+  justify-content: center;
+}
+.overlayRoom {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  background-color: #8a8a8a;
+  height: 200px;
+  width: 500px;
+  border-radius: 5px;
+}
+
+.backdrop{
+    background-color:rgb(190 190 190 / 50%);
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    position: fixed;
+   /* display: none; */
+    top: 0;
+    left: 0;
+}
