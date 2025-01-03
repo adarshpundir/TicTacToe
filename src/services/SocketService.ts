@@ -1,70 +1,111 @@
 import { Socket } from "socket.io-client";
 import io from "socket.io-client";
+import { v4 as uuidv4 } from "uuid";
+import { roomLandingPage, ticTacToe } from "../main";
 
-interface ServerToClientEvents {
-    roomCreated: (roomId: string) => void;
-    roomJoined: (roomId: string) => void;
-    error: (message: string) => void;
+export type IMessage = any;
+
+export interface ClientToServerEvents {
+  "message-sent": (message: IMessage) => void;
+  "join-room": (roomId: string) => void;
+  "player-move": ({
+    roomId,
+    cellId,
+  }: {
+    cellId: string;
+    roomId: string;
+  }) => void;
 }
 
-interface ClientToServerEvents {
-    createRoom: (callback: CallableFunction) => void;
-    joinRoom: (roomId: string, userId: string) => void;
+export interface ServerToClientEvents {
+  "message-received": (message: IMessage) => void;
+  "room-full": (message: { message: string }) => void;
+  "room-joined": (message: { message: string; roomId: string }) => void;
+  "second-player-joined": (message: { message: string }) => void;
+  "player-move": (cellId: string) => void;
+  error: (message: { message: string }) => void;
 }
 
 export class SocketService {
-    private socket: Socket<ServerToClientEvents, ClientToServerEvents>;
-    private static instance: SocketService;
+  private socket: Socket<ServerToClientEvents, ClientToServerEvents>;
+  private static instance: SocketService;
 
-    private constructor() {
-        this.socket = io("http://localhost:3000");
-        this.setupListeners();
+  public roomId: string = "";
+
+  private constructor() {
+    this.socket = io("http://localhost:3000", {
+      path: "/tictactoe",
+    });
+    this.setupListeners();
+  }
+
+  static getInstance(): SocketService {
+    if (!SocketService.instance) {
+      SocketService.instance = new SocketService();
     }
+    return SocketService.instance;
+  }
 
-    static getInstance(): SocketService {
-        if (!SocketService.instance) {
-            SocketService.instance = new SocketService();
-        }
-        return SocketService.instance;
+  private setupListeners(): void {
+    this.socket.on("room-joined", () => {
+      window.alert(`Room Joined`);
+      //   console.log(`Room Joined with ID: ${roomId}`);
+    });
+
+    this.socket.on("message-received", (message: string) => {
+      //Logic msg received
+
+      console.log(`Message received: ${message}`);
+    });
+
+    this.socket.on("second-player-joined", () => {
+      window.alert(`Second Player Joined`);
+      roomLandingPage.removeBackDrop();
+      //   console.log(`Joined room: ${JSON.stringify(roomInfo)}`);
+    });
+
+    this.socket.on("room-full", () => {
+      window.alert(`Room Full`);
+    });
+
+    this.socket.on("player-move", (cellId: string) => {
+      ticTacToe.onPlayerMove(cellId, false);
+    });
+
+    this.socket.on("error", ({ message }) => {
+      console.error(`Socket error: ${message}`);
+    });
+  }
+
+  createRoom(): string {
+    const roomId = uuidv4();
+    try {
+      this.socket.emit("join-room", roomId);
+      this.roomId = roomId;
+      //   console.log(response.status); // 'ok'
+      return roomId;
+    } catch (e) {
+      return "";
+      // the server did not acknowledge the event in the given delay
     }
+  }
 
-    private setupListeners(): void {
-        this.socket.on("roomCreated", (roomId: string) => {
-            console.log(`Room created with ID: ${roomId}`);
-        });
-
-        this.socket.on("roomJoined", (roomInfo: []) => {
-            console.log(`Joined room: ${JSON.stringify(roomInfo)}`);
-        });
-
-        this.socket.on("error", (message: string) => {
-            console.error(`Socket error: ${message}`);
-        });
+  joinRoom(roomId: string) {
+    try {
+      this.socket.emit("join-room", roomId);
+      this.roomId = roomId;
+      //   console.log(response.status); // 'ok'
+      //   return response;
+    } catch (e) {
+      // the server did not acknowledge the event in the given delay
     }
+  }
 
-    async createRoom(userId: string): Promise<void> {
-       
+  sendPlayerMove(cellId: string) {
+    this.socket.emit("player-move", { roomId: this.roomId, cellId });
+  }
 
-          try {
-            const response = await this.socket.emitWithAck('createRoom',{name:'A',id:'A'});
-            console.log(response.status); // 'ok'
-            return response ;
-          } catch (e) {
-            // the server did not acknowledge the event in the given delay
-          }
-    }
-
-   async  joinRoom(roomId: string, userId: string): Promise<void> {
-        try {
-            const response = await this.socket.emitWithAck('joinRoom',{name:userId,id:userId},roomId);
-            console.log(response.status); // 'ok'
-            return response ;
-          } catch (e) {
-            // the server did not acknowledge the event in the given delay
-          }
-    }
-
-    disconnect(): void {
-        this.socket.disconnect();
-    }
+  disconnect(): void {
+    this.socket.disconnect();
+  }
 }

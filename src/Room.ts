@@ -58,14 +58,13 @@ export class RoomLandingPage {
 
     private async handleCreateRoom(): Promise<void> {
         // Handle create room logic
-        const createRoom =  await this.socketService.createRoom('');
-        console.log(JSON.stringify(createRoom));
-        if(createRoom.isSuccess){
-
+        const roomId =  this.socketService.createRoom();
+        // console.log(JSON.stringify(createRoom));
+        if(roomId){
             this.overlayRoom.replaceChildren();
             let displayBlock = document.createElement('div');
             let h4 = document.createElement('h4');
-            h4.textContent = `Waiting for Player to Join....\nRoomId-${createRoom.roomId}`;
+            h4.textContent = `Waiting for Player to Join....\nRoomId-${roomId}`;
             displayBlock.appendChild(h4);
             this.overlayRoom.append(displayBlock);
 
@@ -97,16 +96,14 @@ export class RoomLandingPage {
        
     }
 
-    private async joinRoomForReal(roomId : string) {
+    private joinRoomForReal(roomId : string) {
+        this.socketService.joinRoom(roomId);
+        this.removeBackDrop();
+    }
 
-
-        const joinRoom =  await this.socketService.joinRoom(roomId,'B');
-        console.log(JSON.stringify(joinRoom));
-        if(joinRoom.isSuccess){
-            this.backDrop.remove();
-            this.overlayRoom.remove();
-        }
-
+    removeBackDrop(){
+        this.backDrop.remove();
+        this.overlayRoom.remove();
     }
 
     public cleanup(): void {
